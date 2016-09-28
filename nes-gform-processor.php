@@ -201,6 +201,9 @@ if (class_exists("GFForms")) {
                       // then try and process
                       try {
                         $response = $api -> query_by_email($person, $hash_email = false);
+
+                        // #todo : save the results!
+
                       } catch (\Exception $e) {
                         echo 'Caught exception: ' .  $e->getMessage() . "\n";
                       }
@@ -210,16 +213,6 @@ if (class_exists("GFForms")) {
                 }
               }
             }
-            /*
-            // can we just edit the entry?!
-            if ( isset( $feed['meta'] ) ) {
-              if ( isset( $feed['meta']['nesMappedFields_TowerData_td_gender'] ) ) {
-                if ( $feed['meta']['nesMappedFields_TowerData_td_gender'] != '' ) {
-                  $entry[ $feed['meta']['nesMappedFields_TowerData_td_gender'] ] = 'man';
-                }
-              }
-            }
-            */
 
             // debug things
             if ( $this->get_plugin_setting('nes_debugMode') == 1 )
