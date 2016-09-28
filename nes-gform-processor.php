@@ -141,7 +141,6 @@ if (class_exists("GFForms")) {
                     "fields" => array(
                         array(
                             "name"    => "nes_tdapi",
-                            "tooltip" => "TowerData API Key",
                             "label"   => "TowerData API Key",
                             "type"    => "text",
                             "class"   => "medium"
