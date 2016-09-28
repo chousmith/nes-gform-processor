@@ -145,6 +145,17 @@ if (class_exists("GFForms")) {
                             "type"    => "text",
                             "class"   => "medium"
                         ),
+                        array(
+                            "name"    => "nes_debugMode",
+                            "tooltip" => "Show debug array on form submit",
+                            "label"   => "Debug Mode",
+                            "type"    => "radio",
+                            "class"   => "small",
+                            "choices" => array(
+                                array("label" => "On", "value" => "1"),
+                                array("label" => "Off", "value" => "0"),
+                            ),
+                        ),
                         // is that it?
                     ),
                 ),
