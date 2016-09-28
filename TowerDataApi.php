@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-namespace TowerData;
+//namespace TowerData;
 class TowerDataApi {
   private static $BASE_PATH = "https://api.towerdata.com/v5/td?api_key=";
   private static $BULK_PATH = "https://api.towerdata.com/v5/ei/bulk?api_key=";

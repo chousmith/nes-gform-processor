@@ -46,12 +46,20 @@ if (class_exists("GFForms")) {
                     "title"  => "Lead Enrichment Settings",
                     "fields" => array(
                         array(
+                            "label"   => "NES Feed Name",
+                            "type"    => "text",
+                            "name"    => "nesFeedName",
+                            "class"   => "medium"
+                        ),
+                        array(
                             "name" => "nesMappedFields_Contact",
                             "label" => "Map Lead Fields",
                             "type" => "field_map",
                             "tooltip" => "Map NES fields for Enrichment",
                             "field_map" => array(
+                                array("name" => "RunEnrichment","label" => "Run Enrichment","required" => 1),
                                 array("name" => "Email","label" => "Email","required" => 0),
+                                // and then?
                             )
                         ),
                         array(
@@ -170,98 +178,55 @@ if (class_exists("GFForms")) {
          *
          **/
         public function process_feed($feed, $entry, $form){
-
-            // working vars
-            //$nesFeedSubmit = $feed['meta']['nesFeedSubmit'];
-
-      			// current user info
-      			global $current_user;
-      			get_currentuserinfo();
-
             // get submit to location, and exit if none
-            $url = $this->get_plugin_setting('nes_apiUrl');
-            if ( $url == '' ) :
+            $tdapikey = $this->get_plugin_setting('nes_tdapi');
+            if ( $tdapikey == '' ) :
               return false; // do nothing - GForm submits as normal
             endif;
 
-            // else
-            if ( $url != '' ) {
-              $url = trailingslashit( esc_url_raw( $url ) ) ."gravityformsapi/forms/1/submissions";
-            }
+            $response = array();
 
-            // we will use Google Analytics cookies for some data if available
-            if ( isset($_COOKIE['__utmz']) && !empty($_COOKIE['__utmz']) )
-                $ga_cookie = $this->parse_ga_cookie( $_COOKIE['__utmz'] );
+            include "TowerDataApi.php";
 
-            // full data array for Lead Enrichment
-            $jsonObj = new stdClass();
-            $jsonObj->input_values = new stdClass();
-
-            // set the Side ID Key
-            $jsonObj->input_values->input_28 = $this->get_plugin_setting('nes_siteID');
-            // set default Run
-            $jsonObj->input_values->input_29 = $this->get_plugin_setting('nes_defaultEnrichment');
-
-            $input_map = array(
-              'FirstName' => 'input_1_3',
-              'LastName' => 'input_1_6',
-              'Email' => 'input_2',
-              'Phone' => 'input_23',
-              'Address1' => 'input_24_1',
-              'Address2' => 'input_24_2',
-              'City' => 'input_24_3',
-              'State' => 'input_24_4',
-              'PostalCode' => 'input_24_5',
-              'Country' => 'input_24_6',
-              'AddressInput' => 'input_26',
-              'SourceURL' => 'input_5',
-              'RefURL' => 'input_33',
-              'UserIP' => 'input_6',
-              'UserAgent' => 'input_8',
-            );
-
-            // iterate over meta data mapped fields (from feed fields) and apply to the big array above
-            foreach ($feed['meta'] as $k => $v) {
-              switch ( $k ) {
-                case 'nesAd':
-                  $jsonObj->input_values->input_10 = $v;
-                  break;
-                case 'nesRun':
-                  $jsonObj->input_values->input_29 = $v;
-                  break;
-                default:
-                  $l = explode("_", $k);
-                  if ( $l[0] == 'nesMappedFields' ) {
-                    if ( array_key_exists( $l[2], $input_map ) && !empty( $v ) ) {
-                      $jsonObj->input_values->$input_map[ $l[2] ] = $entry[ $v ];
+            $api = new TowerDataApi( $tdapikey );
+            if ( isset( $feed['meta'] ) ) {
+              if ( isset( $feed['meta']['nesMappedFields_Contact_RunEnrichment'] ) ) {
+                // for now only process if RunEnrichment == 1
+                if ( $entry[ $feed['meta']['nesMappedFields_Contact_RunEnrichment'] ] == 1 ) {
+                  // check if we have an Email from this entry
+                  if ( isset( $feed['meta']['nesMappedFields_Contact_Email'] ) ) {
+                    if ( $feed['meta']['nesMappedFields_Contact_Email'] != '' ) {
+                      // if we actually have an email to process
+                      $person = $entry[ $feed['meta']['nesMappedFields_Contact_Email'] ];
+                      // then try and process
+                      try {
+                        $response = $api -> query_by_email($person, $hash_email = false);
+                      } catch (\Exception $e) {
+                        echo 'Caught exception: ' .  $e->getMessage() . "\n";
+                      }
                     }
+
                   }
-                  break;
                 }
+              }
             }
-
-            // json encode to string for sending
-            $jsonString = wp_json_encode( $jsonObj );
-
-            // cURL :: this sends off the data
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonString);
-            curl_setopt($ch, CURLOPT_PROXY, null);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION,true);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array( 'Content-Type: application/json', 'Content-Length: ' . strlen($jsonString) ) );
-            $apiResult = curl_exec($ch);
-            $httpResult = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            $result = array( 0 => $httpResult, 1 => $apiResult );
+            /*
+            // can we just edit the entry?!
+            if ( isset( $feed['meta'] ) ) {
+              if ( isset( $feed['meta']['nesMappedFields_TowerData_td_gender'] ) ) {
+                if ( $feed['meta']['nesMappedFields_TowerData_td_gender'] != '' ) {
+                  $entry[ $feed['meta']['nesMappedFields_TowerData_td_gender'] ] = 'man';
+                }
+              }
+            }
+            */
 
             // debug things
             if ( $this->get_plugin_setting('nes_debugMode') == 1 )
             {
-                $this->_nes_result['cURL'] = $result;
-                $this->_nes_result['JSONOBJ'] = $jsonObj;
-                $this->_nes_result['JSONSTR'] = $jsonString;
+                $this->_nes_result['TOWERD'] = $response;
+                //$this->_nes_result['JSONOBJ'] = $jsonObj;
+                //$this->_nes_result['JSONSTR'] = $jsonString;
                 $this->_nes_result['FEED'] = $feed;
                 $this->_nes_result['ENTRY'] = $entry;
                 add_action('wp_footer', array( $this, 'nes_debug') );
