@@ -1,4 +1,5 @@
 # NES GForm Processor
+
 Ninthlink Enrichment System "nes" routes submissions in a particular Gravity Form for Lead Enrichment through TowerData. Some assembly may be required.
 
 ## Installation
@@ -37,3 +38,13 @@ After that, follow these steps:
 Your system will be set up to pipe form inputs through TowerData for Enrichment
 
 Note: at this time, there is no way to go through and manually trigger Enrichment processing on submissions input for "Later" Enrichment. That might come some time, but also might wait until WordPress 4.7 is released, or whenever WordPress core contributors figure out this issue: https://core.trac.wordpress.org/ticket/16031
+
+### TowerData API
+
+TowerData API Key can be retrieved from http://dashboard.towerdata.com/
+
+For additional possible future lookup options and enrichments, see https://github.com/TowerData/SDKs/tree/master/php5
+
+### For additional logging
+
+For additional logging, see about installing https://www.gravityhelp.com/documentation/article/logging-add-on/
