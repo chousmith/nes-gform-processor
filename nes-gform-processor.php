@@ -107,7 +107,6 @@ if (class_exists("GFForms")) {
          *
          **/
         public function feed_list_columns() {
-            // #todo
             return array(
                 'nesFeedName' => __('Name', 'nes-gform-processor'),
                 'nesCondition' => __('Condition(s)', 'nes-gform-processor'),
@@ -202,7 +201,32 @@ if (class_exists("GFForms")) {
                       try {
                         $response = $api -> query_by_email($person, $hash_email = false);
 
-                        // #todo : save the results!
+                        // now update actual response?
+                        foreach ( $response as $k => $v ) {
+                          if ( isset( $feed['meta']['nesMappedFields_TowerData_td_'. $k] ) ) {
+                            if ( $feed['meta']['nesMappedFields_TowerData_td_'. $k] != '' ) {
+                              $entry[ $feed['meta']['nesMappedFields_TowerData_td_'. $k] ] = $v;
+                            }
+                          }
+                        }
+                        // set timezone for our time stamping
+                        date_default_timezone_set( 'America/Los_Angeles' );
+                        // set Date and Time enriched too
+                        if ( isset( $feed['meta']['nesMappedFields_TowerData_DateEnriched'] ) ) {
+                          if ( $feed['meta']['nesMappedFields_TowerData_DateEnriched'] != '' ) {
+                            // if we actually have a Date field to save to
+                            $entry[ $feed['meta']['nesMappedFields_TowerData_DateEnriched'] ] = date( 'Y-m-d' );
+                          }
+                        }
+                        if ( isset( $feed['meta']['nesMappedFields_TowerData_TimeEnriched'] ) ) {
+                          if ( $feed['meta']['nesMappedFields_TowerData_TimeEnriched'] != '' ) {
+                            // if we actually have a Time field to save to
+                            $entry[ $feed['meta']['nesMappedFields_TowerData_TimeEnriched'] ] = date( 'H:i' );
+                          }
+                        }
+
+                        // and then update the entry with updated values
+                        GFAPI::update_entry( $entry );
 
                       } catch (\Exception $e) {
                         echo 'Caught exception: ' .  $e->getMessage() . "\n";
